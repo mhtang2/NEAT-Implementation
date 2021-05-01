@@ -8,8 +8,8 @@ def resetNetwork(net):
         node.visited = False
 
 def printNetwork(net):
-    print(net.nodes)
-    print(net.edges)
+    print("Nodes:", net.nodes)
+    print("Edges:", net.edges)
     for node in net.nodes:
         p='['
         for edgeIn in node.edgesIn:
@@ -17,20 +17,36 @@ def printNetwork(net):
                 p+=str(edgeIn.nodeIn.innv)+" "
         p+="] -> " +str(node.innv)
         print(p)
+#TODO: Cycle detection test
 
 def multilayertest():
     n1 = Network(1, 1, 1)
-    print("All nodes" + n1.nodes.__repr__())
-    #[i,hi,o,ho]
     n1._add_edge(n1.nodes[0], n1.nodes[2], 3)
-    n1._add_edge(n1.nodes[0], n1.nodes[3], 3)
-    n1._add_edge(n1.nodes[1], n1.nodes[2], 3)
-    n1._add_edge(n1.nodes[1], n1.nodes[3], 3)
+    #n1._add_edge(n1.nodes[0], n1.nodes[3], 3)
+    #n1._add_edge(n1.nodes[1], n1.nodes[2], 3)
+    #n1._add_edge(n1.nodes[1], n1.nodes[2], 3)
+    #n1._add_edge(n1.nodes[1], n1.nodes[3], 3)
+    #n1.mutate_add_edge()
+    n1.mutate_add_node()
     printNetwork(n1)
+    n2 = Network(1, 1, 1)
+    n2._add_edge(n1.nodes[0], n1.nodes[2], 3)
+    #n1._add_edge(n1.nodes[0], n1.nodes[3], 3)
+    #n1._add_edge(n1.nodes[1], n1.nodes[2], 3)
+    #n1._add_edge(n1.nodes[1], n1.nodes[2], 3)
+    #n1._add_edge(n1.nodes[1], n1.nodes[3], 3)
+    #n1.mutate_add_edge()
+    n2.mutate_add_node()
+    printNetwork(n2)
 
+    '''
     print(n1.feedforward([1]))
+    print(n1.nodes)
     print(n1.feedforward([1]))
+    print(n1.nodes)
     print(n1.feedforward([1]))
+    print(n1.nodes)
+    '''
 
 def testRandom():
     numInputs = 5
@@ -43,6 +59,5 @@ def testRandom():
     assert((0<=node1Num<numInputs+numRNN) or (numNodes-numHidden<=node1Num<numNodes))
     assert((numInputs+numRNN<=node2Num<numNodes))
 
-# multilayertest()
-for _ in range(100000):
-    testRandom()
+multilayertest()
+

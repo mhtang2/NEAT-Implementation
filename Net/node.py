@@ -12,5 +12,9 @@ class Node():
         for edge in self.edgesOut:
             edge.nodeOut.updateDist(self.dist)
 
+
+    def copyConstructor(self):
+        return Node(self.innv)
+
     def __repr__(self):
-        return f"({self.innv} {self.dist})"
+        return f"({self.innv} {self.val})"

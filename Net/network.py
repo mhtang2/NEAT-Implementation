@@ -9,10 +9,13 @@ class Network():
     nodeInnv = Counter()
     edgeInnv = Counter()
 
-    def __init__(self, numInputs, numOutputs, numRNN):
+    def __init__(self, numInputs, numOutputs, numRNN, empty=False):
         # structure of nodes array: [i,hi,o,ho,hh]
-        self.nodes = [Node(Network.nodeInnv.post())
-                      for i in range(numInputs+numOutputs+2*numRNN)]
+        if not empty:
+            self.nodes = [Node(Network.nodeInnv.post())
+                          for i in range(numInputs+numOutputs+2*numRNN)]
+        else:
+            self.nodes = []
         self.edges = []
         self.numInputs = numInputs
         self.numOutputs = numOutputs
@@ -21,7 +24,7 @@ class Network():
     # Helper to add Edge going between NodeIn and NodeOut, default weight to 1
     def _add_edge(self, nodeIn: 'Node', nodeOut: 'Node', weight=None, enable=True):
         if weight is None:
-            weight = random.gauss(0, 1)
+            weight = random.normal()
         newEdge = Edge(nodeIn, nodeOut,
                        Network.edgeInnv.post(), weight, enable)
         self.edges.append(newEdge)
@@ -44,14 +47,13 @@ class Network():
                                 self.numOutputs+2*self.numRNN)
         while not validConfig:
             validConfig = True
-            node1Num = (random.randint(numInputs+numRNN+numHidden) -
+            node1Num = (random.randint(self.numInputs+self.numRNN+numHidden) -
                         numHidden) % numNodes   # Pick from inputs or hidden
             # pick from outputs or hidden
-            node2Num = random.randint(numInputs+numRNN, numNodes)
+            node2Num = random.randint(self.numInputs+self.numRNN, numNodes)
             if node1Num == node2Num:  # Same node
                 validConfig = False
                 continue
-            # TODO: Check this tomorrow
             # If node2 is output node, it will be the ending node
             if not self.nodes[node2Num].edgesOut:
                 nodeFrom = self.nodes[node1Num]
@@ -60,25 +62,27 @@ class Network():
             elif (self.nodes[node1Num].dist < self.nodes[node2Num].dist):
                 nodeFrom = self.nodes[node1Num]
                 nodeTo = self.nodes[node2Num]
-            else:
+            elif (self.nodes[node1Num].dist > self.nodes[node2Num].dist):
                 nodeFrom = self.nodes[node2Num]
                 nodeTo = self.nodes[node1Num]
+            else:
+                validConfig = False
+                continue
 
-            for edge in self.nodes[nodeToNum].edgesIn:
-                if edge.NodeIn == self.nodes[nodeFromNum]:
+            for edge in nodeTo.edgesIn:
+                if edge.nodeIn == nodeFrom:
                     validConfig = False
                     break
-        self._add_edge(self.nodes[nodeFromNum], self.nodes[nodeToNum])
+        self._add_edge(nodeFrom, nodeTo)
 
     ''' Pick edge, insert node between NodeIn and NodeOut of edge,
     weight between new node and NodeOut is 1, weight between NodeIn and
     new node is weight of old edge'''
 
     def mutate_add_node(self):
-        #TODO: FIX THIS
         validConfig = False
         while not validConfig:
-            edgeNum = random.randint(0, len(self.edges)-1)
+            edgeNum = random.randint(0, len(self.edges))
             validConfig = self.edges[edgeNum].enable
         pickedEdge = self.edges[edgeNum]
         pickedEdge.enable = False
@@ -98,7 +102,7 @@ class Network():
 
         return node.val
 
-    # Two state feedforward, return prediction based on inputs
+    # Run one prediction
     def feedforward(self, inputValues):
         assert(len(inputValues) == self.numInputs)
         for i in range(self.numInputs):  # Set input nodes to values of inputs
@@ -130,3 +134,42 @@ class Network():
             node.visited = False
 
         return output
+
+    @staticmethod
+    def crossover(net1: Network, net2: Network):
+        newNet = Network(net1.numInputs, net1.numOutputs net1.numRNN, empty=True)
+
+        # Add Nodes to new net
+        added = {}
+        for node in net1.nodes:
+            newNode = node.copyConstructor()
+            newNet.nodes.append(newNode)
+            added[node.innv] = newNode
+
+        for node in net2.nodes:
+            if node.innv not in added:
+                newNode = node.copyConstructor()
+                newNet.nodes.append(newNode)
+                added[node.innv] = newNode
+
+        # Add Edges to new net
+        edgeNum1 = 0
+        edgeNum2 = 0
+        while edgeNum1 < len(net1.edges) or edgeNum2 < len(net2.edges):
+            if edgeNum1 == len(net1.edges):
+                # Helper copy net2[edge2Num]
+                newEdge = net2.edges[edgeNum2].copyEdge(added)
+                edgeNum2 += 1
+            if edgeNum2 == len(net2.edges):
+                # Helper copy net1[edge1Num]
+                edgeNum1 += 1
+            else:
+                if net1.edges[edgeNum1].innv < net2.edges[edgeNum2].innv:
+                    # Helper copy net1[edgeNum1]
+                    edgeNum1 += 1
+                elif net1.edges[edgeNum1].innv > net2.edges[edgeNum2].innv:
+                    edgeNum2 += 1
+                else:
+                    edgeNum1 += 1
+                    edgeNum2 += 1
+        # TODO: Update dists
