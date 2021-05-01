@@ -1,0 +1,1 @@
+mutate_add_edge: Prevent adding self loops, prevent adding multiple edges, optimize by doing dictionaries

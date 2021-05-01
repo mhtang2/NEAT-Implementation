@@ -10,4 +10,4 @@ class Edge:
     enable: bool = True
 
     def __repr__(self):
-        return f"({self.nodeIn.innv},{self.nodeOut.innv})"
+        return f"({self.nodeIn.innv},{self.nodeOut.innv},{self.weight},{self.enable})"
