@@ -17,7 +17,6 @@ class Edge:
         nodeIn = added[self.nodeIn.innv]
         nodeOut = added[self.nodeOut.innv]
         newEdge = Edge(nodeIn,nodeOut,self.innv,self.weight,self.enable)
-        nodeIn.edgesOut.append(newEdge)
         nodeOut.edgesIn.append(newEdge)
         return newEdge
 

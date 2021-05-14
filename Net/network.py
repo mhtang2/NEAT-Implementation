@@ -4,12 +4,19 @@ from .edge import Edge
 import numpy as np
 import numpy.random as random
 
+EDGE_MUTATION_RATE = 0.05
+ADD_EDGE_MUTATION_RATE = 0.02
+ADD_NODE_MUTATION_RATE = 0.01
+MUTATION_STRENGTH = 0.3
+ADD_NODE_MUTATION_NUMBER = 5
+ADD_EDGE_MUTATION_NUMBER = 5
+
 
 class Network():
     nodeInnv = Counter()
     edgeInnv = Counter()
 
-    def __init__(self, numInputs, numOutputs, numRNN, empty=False):
+    def __init__(self, numInputs, numOutputs, numRNN, activation, empty=False):
         # structure of nodes array: [i,hi,o,ho,hh]
         if not empty:
             self.nodes = [Node(Network.nodeInnv.post())
@@ -20,6 +27,7 @@ class Network():
         self.numInputs = numInputs
         self.numOutputs = numOutputs
         self.numRNN = numRNN
+        self.activation = activation
 
     # Helper to add Edge going between NodeIn and NodeOut, default weight to 1
     def _add_edge(self, nodeIn: 'Node', nodeOut: 'Node', weight=None, enable=True):
@@ -28,10 +36,7 @@ class Network():
         newEdge = Edge(nodeIn, nodeOut,
                        Network.edgeInnv.post(), weight, enable)
         self.edges.append(newEdge)
-        nodeIn.edgesOut.append(newEdge)
         nodeOut.edgesIn.append(newEdge)
-        # Propogate dist changes
-        nodeOut.updateDist(nodeIn.dist)
         return newEdge
 
     def _add_node(self):
@@ -55,21 +60,18 @@ class Network():
                 validConfig = False
                 continue
             # If node2 is output node, it will be the ending node
-            if not self.nodes[node2Num].edgesOut:
+            if (node2Num >= self.numInputs + self.numRNN) and (node2Num < self.numInputs + self.numRNN * 2 + self.numOutputs):
                 nodeFrom = self.nodes[node1Num]
                 nodeTo = self.nodes[node2Num]
-            # Make a connection from
-            elif (self.nodes[node1Num].dist < self.nodes[node2Num].dist):
+            # If node1 is an input node, it will be the starting node
+            elif node2Num < self.numInputs:
                 nodeFrom = self.nodes[node1Num]
                 nodeTo = self.nodes[node2Num]
-            elif (self.nodes[node1Num].dist > self.nodes[node2Num].dist):
-                nodeFrom = self.nodes[node2Num]
-                nodeTo = self.nodes[node1Num]
             else:
-                validConfig = False
-                continue
+                nodeTo = self.nodes[node1Num]
+                nodeFrom = self.nodes[node2Num]
 
-            for edge in nodeTo.edgesIn:
+            for edge in nodeTo.edgesIn:  # Edge already exists
                 if edge.nodeIn == nodeFrom:
                     validConfig = False
                     break
@@ -80,6 +82,8 @@ class Network():
     new node is weight of old edge'''
 
     def mutate_add_node(self):
+        if(len(self.edges) == 0):
+            return
         validConfig = False
         while not validConfig:
             edgeNum = random.randint(0, len(self.edges))
@@ -100,6 +104,7 @@ class Network():
             if edge.enable:
                 node.val += edge.weight * self._evalNode(edge.nodeIn)
 
+        node.val = self.activation(node.val)  # Activation
         return node.val
 
     # Run one prediction
@@ -136,8 +141,9 @@ class Network():
         return output
 
     @staticmethod
-    def crossover(net1: Network, net2: Network):
-        newNet = Network(net1.numInputs, net1.numOutputs net1.numRNN, empty=True)
+    def crossover(net1: "Network", net2: "Network") -> "Network":
+        newNet = Network(net1.numInputs, net1.numOutputs,
+                         net1.numRNN, empty=True)
 
         # Add Nodes to new net
         added = {}
@@ -160,16 +166,39 @@ class Network():
                 # Helper copy net2[edge2Num]
                 newEdge = net2.edges[edgeNum2].copyEdge(added)
                 edgeNum2 += 1
-            if edgeNum2 == len(net2.edges):
+            elif edgeNum2 == len(net2.edges):
                 # Helper copy net1[edge1Num]
+                newEdge = net1.edges[edgeNum1].copyEdge(added)
                 edgeNum1 += 1
             else:
                 if net1.edges[edgeNum1].innv < net2.edges[edgeNum2].innv:
-                    # Helper copy net1[edgeNum1]
+                    newEdge = net1.edges[edgeNum1].copyEdge(added)
                     edgeNum1 += 1
                 elif net1.edges[edgeNum1].innv > net2.edges[edgeNum2].innv:
+                    newEdge = net2.edges[edgeNum2].copyEdge(added)
                     edgeNum2 += 1
                 else:
+                    newEdge = net2.edges[edgeNum2].copyEdge(added)
                     edgeNum1 += 1
                     edgeNum2 += 1
-        # TODO: Update dists
+            if random.random() < EDGE_MUTATION_RATE:
+                newEdge.weight = newEdge.weight + \
+                    (np.gauss() * MUTATION_STRENGTH)
+            newNet.edges.append(newEdge)
+
+            # Pick number of new nodes to muate using a binomial distribution
+            for i in range(random.binomial(ADD_NODE_MUTATION_NUMBER, ADD_NODE_MUTATION_RATE)):
+                newNet.mutate_add_node()
+            # Pick number of new edges to muate using a binomial distribution
+            for i in range(random.binomial(ADD_EDGE_MUTATION_NUMBER, ADD_EDGE_MUTATION_RATE)):
+                newNet.mutate_add_edge()
+
+        return newNet
+
+
+def sigmoid(x):
+    return 1/(1 + np.exp(-x))
+
+
+def tanh(x):
+    return np.tanh(x)
