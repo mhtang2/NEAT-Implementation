@@ -12,11 +12,19 @@ ADD_NODE_MUTATION_NUMBER = 5
 ADD_EDGE_MUTATION_NUMBER = 5
 
 
+def sigmoid(x):
+    return 1/(1 + np.exp(-x))
+
+
+def tanh(x):
+    return np.tanh(x)
+
+
 class Network():
     nodeInnv = Counter()
     edgeInnv = Counter()
 
-    def __init__(self, numInputs, numOutputs, numRNN, activation, empty=False):
+    def __init__(self, numInputs, numOutputs, numRNN, activation=tanh, empty=False):
         # structure of nodes array: [i,hi,o,ho,hh]
         if not empty:
             self.nodes = [Node(Network.nodeInnv.post())
@@ -83,6 +91,7 @@ class Network():
 
     def mutate_add_node(self):
         if(len(self.edges) == 0):
+            self.mutate_add_edge()
             return
         validConfig = False
         while not validConfig:
@@ -181,24 +190,18 @@ class Network():
                     newEdge = net2.edges[edgeNum2].copyEdge(added)
                     edgeNum1 += 1
                     edgeNum2 += 1
+
             if random.random() < EDGE_MUTATION_RATE:
                 newEdge.weight = newEdge.weight + \
-                    (np.gauss() * MUTATION_STRENGTH)
+                    (random.normal() * MUTATION_STRENGTH)
+
             newNet.edges.append(newEdge)
 
-            # Pick number of new nodes to muate using a binomial distribution
-            for i in range(random.binomial(ADD_NODE_MUTATION_NUMBER, ADD_NODE_MUTATION_RATE)):
-                newNet.mutate_add_node()
-            # Pick number of new edges to muate using a binomial distribution
-            for i in range(random.binomial(ADD_EDGE_MUTATION_NUMBER, ADD_EDGE_MUTATION_RATE)):
-                newNet.mutate_add_edge()
+        # Pick number of new nodes to muate using a binomial distribution
+        for i in range(random.binomial(ADD_NODE_MUTATION_NUMBER, ADD_NODE_MUTATION_RATE)):
+            newNet.mutate_add_node()
+        # Pick number of new edges to muate using a binomial distribution
+        for i in range(random.binomial(ADD_EDGE_MUTATION_NUMBER, ADD_EDGE_MUTATION_RATE)):
+            newNet.mutate_add_edge()
 
         return newNet
-
-
-def sigmoid(x):
-    return 1/(1 + np.exp(-x))
-
-
-def tanh(x):
-    return np.tanh(x)

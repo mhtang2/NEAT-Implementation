@@ -1,4 +1,4 @@
-from Net import Network, Edge, Node
+from Net import Network, Edge, Node, Population
 import numpy.random as random
 
 
@@ -92,7 +92,7 @@ def crossoverTest():
             assert(len(oldInnovation2) > 0)
             assert(len(oldInnovation1) > 0)
             assert(len(newInnovation) > 0)
-            assert(newInnovation == oldInnovation1.union(oldInnovation2))
+            assert(oldInnovation1.union(oldInnovation2).issubset(newInnovation))
             # Test edge innovations are in increasing order
             for i in range(1, len(newNet.edges)):
                 assert(newNet.edges[i].innv > newNet.edges[i-1].innv)
@@ -102,4 +102,15 @@ def crossoverTest():
                     assert(edgesIn[i].innv > edgesIn[i-1].innv)
 
 
-crossoverTest()
+def speciation_test():
+    pop = Population(2, 1, 1, 1)
+    nets = pop.networks
+    print(pop.compatibilityDistance(nets[0][0], nets[0][1]))
+    nets[0][0].mutate_add_edge()
+    nets[0][0].mutate_add_edge()
+    nets[0][0].mutate_add_node()
+    nets[0][0].mutate_add_node()
+    print(pop.compatibilityDistance(nets[0][0], nets[0][1]))
+
+
+#speciation_test()
