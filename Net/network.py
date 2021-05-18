@@ -24,10 +24,14 @@ class Network():
     nodeInnv = Counter()
     edgeInnv = Counter()
 
+    @staticmethod
+    def setParams(numInputs, numOutputs, numRNN):
+        Network.nodeInnv = numInputs+numOutputs+2*numRNN
+
     def __init__(self, numInputs, numOutputs, numRNN, activation=tanh, empty=False):
         # structure of nodes array: [i,hi,o,ho,hh]
         if not empty:
-            self.nodes = [Node(Network.nodeInnv.post())
+            self.nodes = [Node(i)
                           for i in range(numInputs+numOutputs+2*numRNN)]
         else:
             self.nodes = []
@@ -126,14 +130,14 @@ class Network():
         output = np.empty(self.numOutputs)
         for i in range(self.numOutputs):
             outputNode = self.nodes[self.numInputs+self.numRNN+i]
-            print("Evaluating output "+str(outputNode))
+            # print("Evaluating output "+str(outputNode))
             output[i] = self._evalNode(outputNode)
 
         # Hidden outputs
         for i in range(self.numRNN):
             outputNode = self.nodes[self.numInputs +
                                     self.numRNN+self.numOutputs+i]
-            print("Evaluating hidden output "+str(outputNode))
+            # print("Evaluating hidden output "+str(outputNode))
             self._evalNode(outputNode)
         # Hidden inputs
         for i in range(self.numRNN):

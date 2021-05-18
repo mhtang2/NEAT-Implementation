@@ -1,6 +1,7 @@
-from Net import Network, Edge, Node, Population
+from Net import Network, Edge, Node, Population, population
 import numpy.random as random
-
+import numpy as np
+from Environments import XOR_Env
 
 def resetNetwork(net):
     for node in net.nodes:
@@ -112,5 +113,18 @@ def speciation_test():
     nets[0][0].mutate_add_node()
     print(pop.compatibilityDistance(nets[0][0], nets[0][1]))
 
+def population_test():
+    pop = Population(100, 2, 1, 0, XOR_Env)
+    for epoch in range(100):
+        pop.run()
+        print(f"Has {len(pop.population)} # of species")
+        print(f"Has {pop.getCurrentPop()} # of members")
+        print(f"Genome size {Network.edgeInnv.x}")
+        printNetwork(pop.population[0].nets[0])
+    
+    print(pop.population)
 
-#speciation_test()
+    
+    
+
+population_test()
