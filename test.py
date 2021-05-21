@@ -1,3 +1,4 @@
+from Environments.environment import MEMORY_env
 from Net import Network, Edge, Node, Population, population
 import numpy.random as random
 import numpy as np
@@ -111,7 +112,7 @@ def speciation_test():
 
 
 def population_test():
-    pop = Population(100, 2+1, 1, 0, XOR_Env)
+    pop = Population(100, 1+1, 1, 1, MEMORY_env)
     for epoch in range(200):
         pop.run()
         print(f"Has {len(pop.population)} # of species")
@@ -122,5 +123,5 @@ def population_test():
     print(pop.population)
 
 
-Network.setParams(2+1, 1, 0)
+Network.setParams(1+1, 1, 1)
 population_test()
