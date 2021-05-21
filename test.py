@@ -3,6 +3,8 @@ import numpy.random as random
 import numpy as np
 from Environments import XOR_Env
 
+random.seed(0)
+
 
 def resetNetwork(net):
     for node in net.nodes:
@@ -27,22 +29,13 @@ def printNetwork(net):
 def multilayertest():
     n1 = Network(1, 1, 1)
     n1._add_edge(n1.nodes[0], n1.nodes[2], 3)
-    #n1._add_edge(n1.nodes[0], n1.nodes[3], 3)
-    #n1._add_edge(n1.nodes[1], n1.nodes[2], 3)
-    #n1._add_edge(n1.nodes[1], n1.nodes[2], 3)
-    #n1._add_edge(n1.nodes[1], n1.nodes[3], 3)
+    # n1._add_edge(n1.nodes[0], n1.nodes[3], 3)
+    # n1._add_edge(n1.nodes[1], n1.nodes[2], 3)
+    # n1._add_edge(n1.nodes[1], n1.nodes[2], 3)
+    # n1._add_edge(n1.nodes[1], n1.nodes[3], 3)
     # n1.mutate_add_edge()
-    n1.mutate_add_node()
+    # n1.mutate_add_node()
     printNetwork(n1)
-    n2 = Network(1, 1, 1)
-    n2._add_edge(n1.nodes[0], n1.nodes[2], 3)
-    #n1._add_edge(n1.nodes[0], n1.nodes[3], 3)
-    #n1._add_edge(n1.nodes[1], n1.nodes[2], 3)
-    #n1._add_edge(n1.nodes[1], n1.nodes[2], 3)
-    #n1._add_edge(n1.nodes[1], n1.nodes[3], 3)
-    # n1.mutate_add_edge()
-    n2.mutate_add_node()
-    printNetwork(n2)
 
     '''
     print(n1.feedforward([1]))
@@ -115,17 +108,19 @@ def speciation_test():
     print(pop.compatibilityDistance(nets[0][0], nets[0][1]))
 
 
+
+
 def population_test():
-    Network.setParams(2, 1, 0)
-    pop = Population(100, 2, 1, 0, XOR_Env)
-    for epoch in range(100):
+    pop = Population(100, 2+1, 1, 0, XOR_Env)
+    for epoch in range(200):
         pop.run()
         print(f"Has {len(pop.population)} # of species")
         print(f"Has {pop.getCurrentPop()} # of members")
         print(f"Genome size {Network.edgeInnv.x}")
-        printNetwork(pop.population[0].nets[0])
+        # printNetwork(pop.population[0].nets[0])
 
     print(pop.population)
 
 
+Network.setParams(2+1, 1, 0)
 population_test()

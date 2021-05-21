@@ -6,15 +6,15 @@ import numpy as np
 import numpy.random as random
 import math
 
-MAX_SPECIES_DIFF = 0.2
+MAX_SPECIES_DIFF = 0.8
 DIST_C1 = 1
 DIST_C2 = 1
 DIST_C3 = 1
 
 
-ELITE_PERCENTAGE = 0.05
+ELITE_PERCENTAGE = 0.20
 MAX_POPULATION = 100
-GRACE_PERIOD = 5
+GRACE_PERIOD = 10
 
 
 class Species:
@@ -94,15 +94,14 @@ class Population:
                 species.nets.append(net)
                 species.fitnessList.append(0)
                 return 0
-
         self.population.append(Species([net]))
         return 1
 
     def eliminateWorstPerforming(self, species: Species, numEliminate):
         # TODO: Write test cases!!!
         numEliminate = math.floor(min(species.size()-2, numEliminate))
-        idxToAdd = np.argpartition(np.array(species.fitnessList), numEliminate)[
-            numEliminate:]
+        idxToAdd = np.argpartition(np.array(species.fitnessList), numEliminate)
+        idxToAdd = idxToAdd[numEliminate:]
         newList = [species.nets[idx] for idx in idxToAdd]
         species.nets = newList
         species.fitnessList = [0]*len(newList)
@@ -121,7 +120,6 @@ class Population:
 
         # Kill lowest performing members of species
         currentPop = self.getCurrentPop()
-        print("Num of members:", currentPop)
         totalEliminate = currentPop - (ELITE_PERCENTAGE * MAX_POPULATION)
         for species in self.population:
             # numToEliminate: function of current pop, and max pop

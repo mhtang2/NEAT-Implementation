@@ -5,11 +5,13 @@ import numpy as np
 import numpy.random as random
 
 EDGE_MUTATION_RATE = 0.05
-ADD_EDGE_MUTATION_RATE = 0.02
-ADD_NODE_MUTATION_RATE = 0.01
-MUTATION_STRENGTH = 0.3
+ADD_EDGE_MUTATION_RATE = 0.03
+ADD_NODE_MUTATION_RATE = 0.03
+MUTATION_STRENGTH = 1
 ADD_NODE_MUTATION_NUMBER = 5
 ADD_EDGE_MUTATION_NUMBER = 5
+
+MAX_CYCLES_ADD_EDGE = 100
 
 
 def sigmoid(x):
@@ -26,13 +28,13 @@ class Network():
 
     @staticmethod
     def setParams(numInputs, numOutputs, numRNN):
-        Network.nodeInnv = numInputs+numOutputs+2*numRNN
+        Network.nodeInnv.val(numInputs+numOutputs+2*numRNN)
 
     def __init__(self, numInputs, numOutputs, numRNN, activation=tanh, empty=False):
         # structure of nodes array: [i,hi,o,ho,hh]
         if not empty:
             self.nodes = [Node(i)
-                          for i in range(numInputs+numOutputs+2*numRNN)]
+                          for i in range(numInputs + numOutputs+2*numRNN)]
         else:
             self.nodes = []
         self.edges = []
@@ -62,7 +64,13 @@ class Network():
         numNodes = len(self.nodes)
         numHidden = numNodes - (self.numInputs +
                                 self.numOutputs+2*self.numRNN)
+        tries = 0
         while not validConfig:
+            # Give up if can't find
+            tries += 1
+            if(tries > MAX_CYCLES_ADD_EDGE):
+                return
+
             validConfig = True
             node1Num = (random.randint(self.numInputs+self.numRNN+numHidden) -
                         numHidden) % numNodes   # Pick from inputs or hidden
@@ -72,16 +80,16 @@ class Network():
                 validConfig = False
                 continue
             # If node2 is output node, it will be the ending node
-            if (node2Num >= self.numInputs + self.numRNN) and (node2Num < self.numInputs + self.numRNN * 2 + self.numOutputs):
+            elif (node2Num >= self.numInputs + self.numRNN) and (node2Num < self.numInputs + self.numRNN * 2 + self.numOutputs):
                 nodeFrom = self.nodes[node1Num]
                 nodeTo = self.nodes[node2Num]
             # If node1 is an input node, it will be the starting node
-            elif node2Num < self.numInputs:
+            elif node1Num < self.numInputs:
                 nodeFrom = self.nodes[node1Num]
                 nodeTo = self.nodes[node2Num]
             else:
-                nodeTo = self.nodes[node1Num]
                 nodeFrom = self.nodes[node2Num]
+                nodeTo = self.nodes[node1Num]
 
             for edge in nodeTo.edgesIn:  # Edge already exists
                 if edge.nodeIn == nodeFrom:
@@ -122,6 +130,7 @@ class Network():
 
     # Run one prediction
     def feedforward(self, inputValues):
+        inputValues.append(1.0)
         assert(len(inputValues) == self.numInputs)
         for i in range(self.numInputs):  # Set input nodes to values of inputs
             self.nodes[i].val = inputValues[i]
