@@ -1,9 +1,11 @@
-from Environments.environment import MEMORY_env
+from Environments.environment import MEMORY_env, XOR_Env
 from Net import Network, Edge, Node, Population, population
 import numpy.random as random
 import numpy as np
 from Environments import XOR_Env
-
+import Net
+import networkx as nx
+import matplotlib.pyplot as plt
 random.seed(0)
 
 
@@ -25,6 +27,16 @@ def printNetwork(net):
         p += "] -> " + str(node.innv)
         print(p)
 # TODO: Cycle detection test
+
+
+def drawNetwork(net):
+    G = nx.DiGraph()
+    V = [node.innv for node in net.nodes]
+    E = [(edge.nodeIn.innv, edge.nodeOut.innv) for edge in net.edges]
+    G.add_nodes_from(V)
+    G.add_edges_from(E)
+    nx.draw_networkx(G)
+    plt.show()
 
 
 def multilayertest():
@@ -109,19 +121,44 @@ def speciation_test():
     print(pop.compatibilityDistance(nets[0][0], nets[0][1]))
 
 
+def insert_sorted_test():
+    net = Network(1, 1, 1)
+    for _ in range(100):
+        e = Edge(net.nodes[0], net.nodes[0], random.randint(1000))
+        net.insert_sorted(net.edges, e)
+    for i in range(1, 100):
+        assert(net.edges[i].innv >= net.edges[i-1].innv)
 
 
 def population_test():
-    pop = Population(100, 1+1, 1, 1, MEMORY_env)
-    for epoch in range(200):
+    pop = Population(200, 2+1, 1, 0, XOR_Env)
+    for epoch in range(2000):
         pop.run()
+        print(f"Epoch {epoch}")
         print(f"Has {len(pop.population)} # of species")
         print(f"Has {pop.getCurrentPop()} # of members")
-        print(f"Genome size {Network.edgeInnv.x}")
+        print(f"Edge size {Network.edgeInnv.x}")
+        print(f"Node size {Network.nodeInnv.x}")
+        print(
+            f"Average nodes per network: {np.mean([len(net.nodes)for species in pop.population for net in species.nets ])}")
         # printNetwork(pop.population[0].nets[0])
-
     print(pop.population)
 
+    biases = set([])
+    # Check edges don't have same nodes
+    edges = []
+    for species in pop.population:
+        for net in species.nets:
+            for edge in net.edges:
+                if(edge.nodeIn.innv == 2):
+                    biases.add(edge.nodeOut.innv)
+                edges.append(edge)
+    print(f"Found {len(biases)} biases")
+    for e1 in edges:
+        for e2 in edges:
+            if (e1.nodeIn.innv == e2.nodeIn.innv and e1.nodeOut.innv == e2.nodeOut.innv):
+                assert(e1.innv == e2.innv)
 
-Network.setParams(1+1, 1, 1)
+
+Network.setParams(2+1, 1, 0)
 population_test()

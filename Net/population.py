@@ -98,25 +98,32 @@ class Population:
         return 1
 
     def eliminateWorstPerforming(self, species: Species, numEliminate):
-        # TODO: Write test cases!!!
         numEliminate = math.floor(min(species.size()-2, numEliminate))
+        if numEliminate <= 0:
+            # TODO:  FIGURE OUT WHY NUMELIMINATE IS NEGATIVE 
+            return
         idxToAdd = np.argpartition(np.array(species.fitnessList), numEliminate)
         idxToAdd = idxToAdd[numEliminate:]
+        # print("Left after elim ", len(idxToAdd))
+        newFitnessList = [species.fitnessList[idx] for idx in idxToAdd]
+        pctOfPop = len(newFitnessList)/(numEliminate+len(newFitnessList))
+        print("Elite Fitness ", sum(newFitnessList)/pctOfPop)
         newList = [species.nets[idx] for idx in idxToAdd]
         species.nets = newList
         species.fitnessList = [0]*len(newList)
 
     def run(self):
         for species in self.population:
+            numPerfect = 0
             for netNum in range(species.size()):
-                fitness = self.environment.evaluate(
-                    species.nets[netNum]) / species.size()
-                species.fitnessList[netNum] = fitness
-
+                fitness = self.environment.evaluate(species.nets[netNum])
+                if fitness >= 3.5:
+                    numPerfect += 1
+                species.fitnessList[netNum] = fitness / species.size()
+            print(f"Found {numPerfect} perfect members")
         totalFitness = 0  # Total fitness of population
         for species in self.population:
             totalFitness += species.updateFitnessSum()
-        print(f"Got fitness {totalFitness/len(self.population)}")
 
         # Kill lowest performing members of species
         currentPop = self.getCurrentPop()
