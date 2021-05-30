@@ -7,9 +7,8 @@ import numpy.random as random
 from Net import edge
 
 
-
-
 MAX_CYCLES_ADD_EDGE = 100
+MAX_CYCLES_ADD_NODE = 100
 
 
 def sigmoid(x):
@@ -24,7 +23,7 @@ def relu(x):
     return x if x > 0 else 0
 
 
-activation = relu
+activation = sigmoid
 
 
 class Network():
@@ -141,7 +140,12 @@ class Network():
             self.mutate_add_edge()
             return
         validConfig = False
+        tries = 0
         while not validConfig:
+            tries += 1
+            if(tries > MAX_CYCLES_ADD_NODE):
+                return
+            # Give up if too many tries
             edgeNum = random.randint(0, len(self.edges))
             validConfig = self.edges[edgeNum].enable
         pickedEdge = self.edges[edgeNum]
@@ -216,4 +220,3 @@ class Network():
             node.visited = False
 
         return output
-

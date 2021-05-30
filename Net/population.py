@@ -17,17 +17,17 @@ ADD_EDGE_MUTATION_NUMBER = 5
 NODE_ABLENESS_MUTATION_RATE = 0.05
 EDGE_ABLENESS_MUTATION_RATE = 0.01
 
-MAX_SPECIES_DIFF = 0.8
+MAX_SPECIES_DIFF = 1000  # 0.8
 DIST_C1 = 1
 DIST_C2 = 1
 DIST_C3 = 1
 
 
 ELITE_PERCENTAGE = 0.20
-MAX_POPULATION = 100
-GRACE_PERIOD = 50
+MAX_POPULATION = 200
+GRACE_PERIOD = 10
 
-PERFECT_FITNESS = 9.99
+PERFECT_FITNESS = 3.5
 
 
 def crossover(net1: "Network", net2: "Network") -> "Network":
@@ -76,7 +76,6 @@ def crossover(net1: "Network", net2: "Network") -> "Network":
                 (random.normal() * MUTATION_STRENGTH)
 
         newNet.edges.append(newEdge)
-
     for i in range(random.binomial(ADD_NODE_MUTATION_NUMBER, NODE_ABLENESS_MUTATION_RATE)):
         newNet.mutate_node_ableness()
 
@@ -86,6 +85,7 @@ def crossover(net1: "Network", net2: "Network") -> "Network":
     # Pick number of new nodes to muate using a binomial distribution
     for i in range(random.binomial(ADD_NODE_MUTATION_NUMBER, ADD_NODE_MUTATION_RATE)):
         newNet.mutate_add_node()
+
     # Pick number of new edges to muate using a binomial distribution
     for i in range(random.binomial(ADD_EDGE_MUTATION_NUMBER, ADD_EDGE_MUTATION_RATE)):
         newNet.mutate_add_edge()
@@ -181,9 +181,9 @@ class Population:
         idxToAdd = np.argpartition(np.array(species.fitnessList), numEliminate)
         idxToAdd = idxToAdd[numEliminate:]
         # print("Left after elim ", len(idxToAdd))
-        newFitnessList = [species.fitnessList[idx] for idx in idxToAdd]
 
         # Calculate elite fitness: Can delete
+        newFitnessList = [species.fitnessList[idx] for idx in idxToAdd]
         pctOfPop = len(newFitnessList)/(numEliminate+len(newFitnessList))
         print("Elite Fitness ", sum(newFitnessList)/pctOfPop)
 
@@ -191,11 +191,29 @@ class Population:
         species.nets = newList
         species.fitnessList = [0]*len(newList)
 
+    def test(self, topN=5):
+        networkList = []
+        fitnessList = []
+        for species in self.population:
+            for net in species.nets:
+                fitnessList.append(self.environment.eval_train(net))
+                networkList.append(net)
+        idxToAdd = np.argpartition(
+            np.array(fitnessList), len(networkList)-topN)
+        idxToAdd = idxToAdd[len(networkList)-topN:]
+
+        fitnessList = [fitnessList[idx] for idx in idxToAdd]
+        print(fitnessList)
+        networkList = [networkList[idx] for idx in idxToAdd]
+
+        for net in networkList:
+            print("Elite Network Test: ", self.environment.eval_test(net))
+
     def run(self):
         for species in self.population:
             numPerfect = 0
             for netNum in range(species.size()):
-                fitness = self.environment.evaluate(species.nets[netNum])
+                fitness = self.environment.eval_train(species.nets[netNum])
                 if fitness >= PERFECT_FITNESS:
                     numPerfect += 1
                 species.fitnessList[netNum] = fitness / species.size()
@@ -214,7 +232,6 @@ class Population:
             # speciesEliminate = (len(species)/currentPop) * totalEliminate
             numToEliminate = (species.size()/currentPop) * totalEliminate
             self.eliminateWorstPerforming(species, numToEliminate)
-
         # Reproduce
         numDied = 0
         numNew = 0
@@ -233,6 +250,6 @@ class Population:
                 parent1Num = random.randint(species.size())
                 parent2Num = random.randint(species.size())
                 child = crossover(species.nets[parent1Num],
-                                          species.nets[parent2Num])
+                                  species.nets[parent2Num])
                 numNew += self.addToPopulation(child)
             species.age += 1

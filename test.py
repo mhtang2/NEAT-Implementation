@@ -131,8 +131,8 @@ def insert_sorted_test():
 
 
 def population_test():
-    pop = Population(200, 1+1, 1, 1, MEMORY_env)
-    for epoch in range(2000):
+    pop = Population(200, 2+1, 1, 0, XOR_Env)
+    for epoch in range(200):
         pop.run()
         print(f"Epoch {epoch}")
         print(f"Has {len(pop.population)} # of species")
@@ -140,32 +140,36 @@ def population_test():
         print(f"Edge size {Network.edgeInnv.x}")
         print(f"Node size {Network.nodeInnv.x}")
         print(
-            f"Average nodes per network: {np.mean([len(net.nodes)for species in pop.population for net in species.nets ])}")
+            f"Average nodes per network: {np.mean([len([node for node in net.nodes if node.enabled])for species in pop.population for net in species.nets ])}")
         # printNetwork(pop.population[0].nets[0])
     print(pop.population)
 
     biases = set([])
     # Check edges don't have same nodes
-    edges = []
-    for species in pop.population:
-        for net in species.nets:
-            for edge in net.edges:
-                if(edge.nodeIn.innv == 2):
-                    biases.add(edge.nodeOut.innv)
-                edges.append(edge)
-    print(f"Found {len(biases)} biases")
-    for e1 in edges:
-        for e2 in edges:
-            if (e1.nodeIn.innv == e2.nodeIn.innv and e1.nodeOut.innv == e2.nodeOut.innv):
-                assert(e1.innv == e2.innv)
+    # edges = []
+    # for species in pop.population:
+    #     for net in species.nets:
+    #         for edge in net.edges:
+    #             if(edge.nodeIn.innv == 2):
+    #                 biases.add(edge.nodeOut.innv)
+    #             edges.append(edge)
+    # print(f"Found {len(biases)} biases")
+    # for e1 in edges:
+    #     for e2 in edges:
+    #         if (e1.nodeIn.innv == e2.nodeIn.innv and e1.nodeOut.innv == e2.nodeOut.innv):
+    #             assert(e1.innv == e2.innv)
 
+    pop.test()
+    
 def manual_perfect():
     env = MEMORY_env
     n = Network(1+1,1,1,empty=False)
     n._add_edge(n.nodes[0], n.nodes[4], 1)
     n._add_edge(n.nodes[2], n.nodes[3], 1)
     print(env.evaluate(n))
-Network.setParams(1+1, 1, 1)
+
+
+Network.setParams(2+1, 1, 0)
 population_test()
 # manual_perfect()
 
