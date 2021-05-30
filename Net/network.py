@@ -6,16 +6,7 @@ import numpy.random as random
 
 from Net import edge
 
-EDGE_MUTATION_RATE = 0.05
-ADD_EDGE_MUTATION_RATE = 0.05
-ADD_NODE_MUTATION_RATE = 0.03
-MUTATION_STRENGTH = 1
 
-ADD_NODE_MUTATION_NUMBER = 5
-ADD_EDGE_MUTATION_NUMBER = 5
-
-NODE_ABLENESS_MUTATION_RATE = 0.05
-EDGE_ABLENESS_MUTATION_RATE = 0.01
 
 
 MAX_CYCLES_ADD_EDGE = 100
@@ -226,65 +217,3 @@ class Network():
 
         return output
 
-    @ staticmethod
-    def crossover(net1: "Network", net2: "Network") -> "Network":
-        newNet = Network(net1.numInputs, net1.numOutputs,
-                         net1.numRNN, empty=True)
-
-        # Add Nodes to new net
-        added = {}
-        for node in net1.nodes:
-            newNode = node.copyConstructor()
-            newNet.nodes.append(newNode)
-            added[node.innv] = newNode
-
-        for node in net2.nodes:
-            if node.innv not in added:
-                newNode = node.copyConstructor()
-                newNet.nodes.append(newNode)
-                added[node.innv] = newNode
-
-        # Add Edges to new net
-        edgeNum1 = 0
-        edgeNum2 = 0
-        while edgeNum1 < len(net1.edges) or edgeNum2 < len(net2.edges):
-            if edgeNum1 == len(net1.edges):
-                # Helper copy net2[edge2Num]
-                newEdge = net2.edges[edgeNum2].copyEdge(added)
-                edgeNum2 += 1
-            elif edgeNum2 == len(net2.edges):
-                # Helper copy net1[edge1Num]
-                newEdge = net1.edges[edgeNum1].copyEdge(added)
-                edgeNum1 += 1
-            else:
-                if net1.edges[edgeNum1].innv < net2.edges[edgeNum2].innv:
-                    newEdge = net1.edges[edgeNum1].copyEdge(added)
-                    edgeNum1 += 1
-                elif net1.edges[edgeNum1].innv > net2.edges[edgeNum2].innv:
-                    newEdge = net2.edges[edgeNum2].copyEdge(added)
-                    edgeNum2 += 1
-                else:
-                    newEdge = net2.edges[edgeNum2].copyEdge(added)
-                    edgeNum1 += 1
-                    edgeNum2 += 1
-
-            if random.random() < EDGE_MUTATION_RATE:
-                newEdge.weight = newEdge.weight + \
-                    (random.normal() * MUTATION_STRENGTH)
-
-            newNet.edges.append(newEdge)
-
-        for i in range(random.binomial(ADD_NODE_MUTATION_NUMBER, NODE_ABLENESS_MUTATION_RATE)):
-            newNet.mutate_node_ableness()
-
-        for i in range(random.binomial(ADD_EDGE_MUTATION_NUMBER, EDGE_ABLENESS_MUTATION_RATE)):
-            newNet.mutate_edge_ableness()
-
-        # Pick number of new nodes to muate using a binomial distribution
-        for i in range(random.binomial(ADD_NODE_MUTATION_NUMBER, ADD_NODE_MUTATION_RATE)):
-            newNet.mutate_add_node()
-        # Pick number of new edges to muate using a binomial distribution
-        for i in range(random.binomial(ADD_EDGE_MUTATION_NUMBER, ADD_EDGE_MUTATION_RATE)):
-            newNet.mutate_add_edge()
-
-        return newNet
