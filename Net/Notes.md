@@ -14,3 +14,6 @@ initial population shoudl be divided into species
 - Allow Network to Prune itself
 
 - Rewrite population code
+
+
+- Fix disabled/enabled edges in crossing over

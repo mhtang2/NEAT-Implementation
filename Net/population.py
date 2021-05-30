@@ -16,6 +16,8 @@ ELITE_PERCENTAGE = 0.20
 MAX_POPULATION = 100
 GRACE_PERIOD = 50
 
+PERFECT_FITNESS = 9.99
+
 
 class Species:
     def __init__(self, initialSpecies=[]):
@@ -33,8 +35,8 @@ class Species:
 
 
 class Population:
-    def __init__(self, initialPopulation, numInputs, numOutputs, numRNN, environment, activation=tanh):
-        self.population = [Species([Network(numInputs, numOutputs, numRNN, activation)
+    def __init__(self, initialPopulation, numInputs, numOutputs, numRNN, environment):
+        self.population = [Species([Network(numInputs, numOutputs, numRNN)
                                     for _ in range(initialPopulation)])]
         self.environment = environment
         print(self.population)
@@ -100,14 +102,17 @@ class Population:
     def eliminateWorstPerforming(self, species: Species, numEliminate):
         numEliminate = math.floor(min(species.size()-2, numEliminate))
         if numEliminate <= 0:
-            # TODO:  FIGURE OUT WHY NUMELIMINATE IS NEGATIVE 
+            # TODO:  FIGURE OUT WHY NUMELIMINATE IS NEGATIVE
             return
         idxToAdd = np.argpartition(np.array(species.fitnessList), numEliminate)
         idxToAdd = idxToAdd[numEliminate:]
         # print("Left after elim ", len(idxToAdd))
         newFitnessList = [species.fitnessList[idx] for idx in idxToAdd]
+
+        # Calculate elite fitness: Can delete
         pctOfPop = len(newFitnessList)/(numEliminate+len(newFitnessList))
         print("Elite Fitness ", sum(newFitnessList)/pctOfPop)
+
         newList = [species.nets[idx] for idx in idxToAdd]
         species.nets = newList
         species.fitnessList = [0]*len(newList)
@@ -117,7 +122,7 @@ class Population:
             numPerfect = 0
             for netNum in range(species.size()):
                 fitness = self.environment.evaluate(species.nets[netNum])
-                if fitness >= 3.5:
+                if fitness >= PERFECT_FITNESS:
                     numPerfect += 1
                 species.fitnessList[netNum] = fitness / species.size()
             print(f"Found {numPerfect} perfect members")

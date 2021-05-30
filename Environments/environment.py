@@ -22,11 +22,8 @@ class XOR_Env(Environment):
 class MEMORY_env(Environment):
     def evaluate(network):
         err = 0
-        x_prev = 0
         for i in range(10):
-            x = random.rand()
-            if (i >= 1):
-                y = network.feedforward([x])[0]
-                err += np.abs(x_prev-y)
-            x_prev = x
-        return 0-err
+            y = network.feedforward([i])[0]
+            if i > 0:
+                err += np.abs((i-1)-y)
+        return max(0.01, 10-err)

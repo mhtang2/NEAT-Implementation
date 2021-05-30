@@ -10,8 +10,13 @@ EDGE_MUTATION_RATE = 0.05
 ADD_EDGE_MUTATION_RATE = 0.05
 ADD_NODE_MUTATION_RATE = 0.03
 MUTATION_STRENGTH = 1
+
 ADD_NODE_MUTATION_NUMBER = 5
 ADD_EDGE_MUTATION_NUMBER = 5
+
+NODE_ABLENESS_MUTATION_RATE = 0.05
+EDGE_ABLENESS_MUTATION_RATE = 0.01
+
 
 MAX_CYCLES_ADD_EDGE = 100
 
@@ -22,6 +27,13 @@ def sigmoid(x):
 
 def tanh(x):
     return np.tanh(x)
+
+
+def relu(x):
+    return x if x > 0 else 0
+
+
+activation = relu
 
 
 class Network():
@@ -35,7 +47,7 @@ class Network():
     def setParams(numInputs, numOutputs, numRNN):
         Network.nodeInnv.val(numInputs+numOutputs+2*numRNN)
 
-    def __init__(self, numInputs, numOutputs, numRNN, activation=tanh, empty=False):
+    def __init__(self, numInputs, numOutputs, numRNN, empty=False):
         # structure of nodes array: [i,hi,o,ho,hh]
         if not empty:
             self.nodes = [Node(i)
@@ -46,14 +58,17 @@ class Network():
         self.numInputs = numInputs
         self.numOutputs = numOutputs
         self.numRNN = numRNN
-        self.activation = activation
+
+    def numSetNodes(self):
+        """Number of non-hidden nodes (Is fixed)"""
+        return self.numOutputs+self.numInputs+2*self.numRNN
 
     # Helper to add Edge going between NodeIn and NodeOut, default weight to 1
     def _add_edge(self, nodeIn: 'Node', nodeOut: 'Node', weight=None, enable=True):
         if weight is None:
             weight = random.normal()
         edgeKey = (nodeIn.innv, nodeOut.innv)
-        
+
         # Check if edge already exists in genome
         if edgeKey in Network.edgeGenome:
             newEdge = Edge(nodeIn, nodeOut,
@@ -100,6 +115,7 @@ class Network():
                 return
 
             validConfig = True
+            # i hi o ho hh
             node1Num = (random.randint(self.numInputs+self.numRNN+numHidden) -
                         numHidden) % numNodes   # Pick from inputs or hidden
             # pick from outputs or hidden
@@ -112,7 +128,7 @@ class Network():
                 nodeFrom = self.nodes[node1Num]
                 nodeTo = self.nodes[node2Num]
             # If node1 is an input node, it will be the starting node
-            elif node1Num < self.numInputs:
+            elif node1Num < self.numInputs+self.numRNN:
                 nodeFrom = self.nodes[node1Num]
                 nodeTo = self.nodes[node2Num]
             else:
@@ -146,22 +162,34 @@ class Network():
         else:
             innv = Network.nodeInnv.post()
             Network.nodeGenome[edgeKey] = innv
-        
-        newNode=self._add_node(innv)
+
+        newNode = self._add_node(innv)
         self._add_edge(pickedEdge.nodeIn, newNode, weight=pickedEdge.weight)
         self._add_edge(newNode, pickedEdge.nodeOut, weight=1)
 
+    def mutate_node_ableness(self):
+        if len(self.nodes) > self.numSetNodes():
+            nodeNum = random.randint(self.numSetNodes(), len(self.nodes))
+            self.nodes[nodeNum].enabled = not self.nodes[nodeNum].enabled
+
+    def mutate_edge_ableness(self):
+        if(len(self.edges) > 0):
+            edgeNum = random.randint(len(self.edges))
+            self.edges[edgeNum].enable = not self.edges[edgeNum].enable
+
     # Return value inside node to pass through edge
     def _evalNode(self, node):
-        if(node.visited):
+        if not node.enabled:
+            return 0
+        if node.visited:
             return node.val
-        node.visited=True
+        node.visited = True
 
         for edge in node.edgesIn:
             if edge.enable:
                 node.val += edge.weight * self._evalNode(edge.nodeIn)
 
-        node.val=self.activation(node.val)  # Activation
+        node.val = activation(node.val)  # Activation
         return node.val
 
     # Run one prediction
@@ -169,82 +197,88 @@ class Network():
         inputValues.append(1.0)
         assert(len(inputValues) == self.numInputs)
         for i in range(self.numInputs):  # Set input nodes to values of inputs
-            self.nodes[i].val=inputValues[i]
-            self.nodes[i].visited=True
+            self.nodes[i].val = inputValues[i]
+            self.nodes[i].visited = True
 
-        output=np.empty(self.numOutputs)
+        output = np.empty(self.numOutputs)
         for i in range(self.numOutputs):
-            outputNode=self.nodes[self.numInputs+self.numRNN+i]
+            outputNode = self.nodes[self.numInputs+self.numRNN+i]
             # print("Evaluating output "+str(outputNode))
-            output[i]=self._evalNode(outputNode)
+            output[i] = self._evalNode(outputNode)
 
         # Hidden outputs
         for i in range(self.numRNN):
-            outputNode=self.nodes[self.numInputs +
+            outputNode = self.nodes[self.numInputs +
                                     self.numRNN+self.numOutputs+i]
             # print("Evaluating hidden output "+str(outputNode))
             self._evalNode(outputNode)
         # Hidden inputs
         for i in range(self.numRNN):
-            self.nodes[self.numInputs+i].visited=True
-            self.nodes[self.numInputs+i].val=self.nodes[self.numInputs +
+            self.nodes[self.numInputs+i].visited = True
+            self.nodes[self.numInputs+i].val = self.nodes[self.numInputs +
                                                           self.numRNN + self.numOutputs + i].val
 
         # Reset graph for next time step
         for nodeNum in range(self.numInputs + self.numRNN, len(self.nodes)):
-            node=self.nodes[nodeNum]
-            node.val=0
-            node.visited=False
+            node = self.nodes[nodeNum]
+            node.val = 0
+            node.visited = False
 
         return output
 
     @ staticmethod
     def crossover(net1: "Network", net2: "Network") -> "Network":
-        newNet=Network(net1.numInputs, net1.numOutputs,
+        newNet = Network(net1.numInputs, net1.numOutputs,
                          net1.numRNN, empty=True)
 
         # Add Nodes to new net
-        added={}
+        added = {}
         for node in net1.nodes:
-            newNode=node.copyConstructor()
+            newNode = node.copyConstructor()
             newNet.nodes.append(newNode)
-            added[node.innv]=newNode
+            added[node.innv] = newNode
 
         for node in net2.nodes:
             if node.innv not in added:
-                newNode=node.copyConstructor()
+                newNode = node.copyConstructor()
                 newNet.nodes.append(newNode)
-                added[node.innv]=newNode
+                added[node.innv] = newNode
 
         # Add Edges to new net
-        edgeNum1=0
-        edgeNum2=0
+        edgeNum1 = 0
+        edgeNum2 = 0
         while edgeNum1 < len(net1.edges) or edgeNum2 < len(net2.edges):
             if edgeNum1 == len(net1.edges):
                 # Helper copy net2[edge2Num]
-                newEdge=net2.edges[edgeNum2].copyEdge(added)
+                newEdge = net2.edges[edgeNum2].copyEdge(added)
                 edgeNum2 += 1
             elif edgeNum2 == len(net2.edges):
                 # Helper copy net1[edge1Num]
-                newEdge=net1.edges[edgeNum1].copyEdge(added)
+                newEdge = net1.edges[edgeNum1].copyEdge(added)
                 edgeNum1 += 1
             else:
                 if net1.edges[edgeNum1].innv < net2.edges[edgeNum2].innv:
-                    newEdge=net1.edges[edgeNum1].copyEdge(added)
+                    newEdge = net1.edges[edgeNum1].copyEdge(added)
                     edgeNum1 += 1
                 elif net1.edges[edgeNum1].innv > net2.edges[edgeNum2].innv:
-                    newEdge=net2.edges[edgeNum2].copyEdge(added)
+                    newEdge = net2.edges[edgeNum2].copyEdge(added)
                     edgeNum2 += 1
                 else:
-                    newEdge=net2.edges[edgeNum2].copyEdge(added)
+                    newEdge = net2.edges[edgeNum2].copyEdge(added)
                     edgeNum1 += 1
                     edgeNum2 += 1
 
             if random.random() < EDGE_MUTATION_RATE:
-                newEdge.weight=newEdge.weight + \
+                newEdge.weight = newEdge.weight + \
                     (random.normal() * MUTATION_STRENGTH)
 
             newNet.edges.append(newEdge)
+
+        for i in range(random.binomial(ADD_NODE_MUTATION_NUMBER, NODE_ABLENESS_MUTATION_RATE)):
+            newNet.mutate_node_ableness()
+
+        for i in range(random.binomial(ADD_EDGE_MUTATION_NUMBER, EDGE_ABLENESS_MUTATION_RATE)):
+            newNet.mutate_edge_ableness()
 
         # Pick number of new nodes to muate using a binomial distribution
         for i in range(random.binomial(ADD_NODE_MUTATION_NUMBER, ADD_NODE_MUTATION_RATE)):

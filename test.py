@@ -1,11 +1,11 @@
-from Environments.environment import MEMORY_env, XOR_Env
 from Net import Network, Edge, Node, Population, population
 import numpy.random as random
 import numpy as np
-from Environments import XOR_Env
+from Environments import XOR_Env, MEMORY_env
 import Net
 import networkx as nx
 import matplotlib.pyplot as plt
+
 random.seed(0)
 
 
@@ -131,7 +131,7 @@ def insert_sorted_test():
 
 
 def population_test():
-    pop = Population(200, 2+1, 1, 0, XOR_Env)
+    pop = Population(200, 1+1, 1, 1, MEMORY_env)
     for epoch in range(2000):
         pop.run()
         print(f"Epoch {epoch}")
@@ -159,6 +159,13 @@ def population_test():
             if (e1.nodeIn.innv == e2.nodeIn.innv and e1.nodeOut.innv == e2.nodeOut.innv):
                 assert(e1.innv == e2.innv)
 
-
-Network.setParams(2+1, 1, 0)
+def manual_perfect():
+    env = MEMORY_env
+    n = Network(1+1,1,1,empty=False)
+    n._add_edge(n.nodes[0], n.nodes[4], 1)
+    n._add_edge(n.nodes[2], n.nodes[3], 1)
+    print(env.evaluate(n))
+Network.setParams(1+1, 1, 1)
 population_test()
+# manual_perfect()
+

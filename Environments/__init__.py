@@ -1,1 +1,1 @@
-from .environment import Environment, XOR_Env
+from .environment import Environment, XOR_Env, MEMORY_env
