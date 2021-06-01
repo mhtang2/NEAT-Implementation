@@ -3,6 +3,7 @@ from .node import Node
 from .edge import Edge
 import numpy as np
 import numpy.random as random
+from scipy.special import expit
 
 from Net import edge
 
@@ -12,8 +13,8 @@ MAX_CYCLES_ADD_NODE = 100
 
 
 def sigmoid(x):
-    return 1/(1 + np.exp(-x))
-
+    #return 1/(1 + np.exp(-x))
+    return expit(x)
 
 def tanh(x):
     return np.tanh(x)
@@ -23,7 +24,7 @@ def relu(x):
     return x if x > 0 else 0
 
 
-activation = sigmoid
+activation = relu
 
 
 class Network():
@@ -101,7 +102,7 @@ class Network():
         while not validConfig:
             # Give up if can't find
             tries += 1
-            if(tries > MAX_CYCLES_ADD_EDGE):
+            if(tries > min(len(self.nodes), MAX_CYCLES_ADD_EDGE)):
                 return
 
             validConfig = True
@@ -143,7 +144,7 @@ class Network():
         tries = 0
         while not validConfig:
             tries += 1
-            if(tries > MAX_CYCLES_ADD_NODE):
+            if(tries > min(len(self.edges), MAX_CYCLES_ADD_NODE)):
                 return
             # Give up if too many tries
             edgeNum = random.randint(0, len(self.edges))

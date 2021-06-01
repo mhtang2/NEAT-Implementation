@@ -2,6 +2,8 @@ from Net import Network
 import Net
 import numpy as np
 from numpy import random
+import pandas as pd
+from sklearn import preprocessing
 
 
 class Environment():
@@ -10,6 +12,42 @@ class Environment():
 
     def eval_test(network):
         pass
+
+
+class Stock_env(Environment):
+
+    def loadData():
+        df = pd.read_csv(
+            "data/aapl1y")[["Close/Last", "Volume", "Open", "High", "Low"]]
+        df = df.iloc[::-1]
+        print(df.head)
+        data = df.values
+        print(data)
+        scaler = preprocessing.MinMaxScaler()
+        scaler.fit(data)
+        data = scaler.transform(data)
+        training = data[:-30]
+        testing = data[-30:]
+        return training, testing, scaler
+
+    trainingDat, testingDat, scaler = loadData()
+
+    # Predict next day open given previous day open, volume, high, low, and close
+    def eval_train(network):
+        err = 0
+        for i in range(len(Stock_env.trainingDat)-1):
+            xi = Stock_env.trainingDat[i].tolist()
+            y = network.feedforward(xi)[0]
+            err += np.abs(Stock_env.trainingDat[i+1][0]-y)
+        return max(0.01, 260-err)
+
+    def eval_test(network):
+        err = 0
+        for i in range(len(Stock_env.testingDat)-1):
+            xi = Stock_env.testingDat[i].tolist()
+            y = network.feedforward(xi)[0]
+            err += np.abs(Stock_env.testingDat[i+1][0]-y)
+        return max(0.01, 30-err)
 
 
 class XOR_Env(Environment):
