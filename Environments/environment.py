@@ -32,8 +32,8 @@ class Stock_env(Environment):
 
     trainingDat, testingDat, scaler = loadData()
 
-    # Predict next day open given previous day open, volume, high, low, and close
-    def eval_train(network):
+    # Predict next day close given previous day open, volume, high, low, and close
+    def eval_train(network) -> float:
         err = 0
         for i in range(len(Stock_env.trainingDat)-1):
             xi = Stock_env.trainingDat[i].tolist()
@@ -41,7 +41,7 @@ class Stock_env(Environment):
             err += np.abs(Stock_env.trainingDat[i+1][0]-y)
         return max(0.01, 260-err)
 
-    def eval_test(network):
+    def eval_test(network) -> float:
         err = 0
         for i in range(len(Stock_env.testingDat)-1):
             xi = Stock_env.testingDat[i].tolist()
