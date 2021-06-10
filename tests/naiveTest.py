@@ -1,7 +1,7 @@
 from Net import Network, Edge, Node, Population, population
 import numpy.random as random
 import numpy as np
-from Environments import XOR_Env, MEMORY_env, Stock_env
+from Environments import stock_environment
 import Net
 import networkx as nx
 import matplotlib.pyplot as plt
@@ -10,9 +10,9 @@ import matplotlib.pyplot as plt
 
 
 def trained_model_test():
-    pop = Population(100, 1+5, 1, 1, Stock_env)
+    pop = Population(100, 1+5, 1, 1, stock_environment.Stock_env)
     for epoch in range(200):
-        Stock_env.setRandomStart()
+        stock_environment.Stock_env.setRandomStart()
         pop.run()
         print(f"Epoch {epoch}")
         print(f"Has {len(pop.population)} # of species")
@@ -24,6 +24,7 @@ def trained_model_test():
         # printNetwork(pop.population[0].nets[0])
     pop.test()
 
+
 def naive_test():
     Network.setParams(5+1, 1, 1)
     network = Network(5+1, 1, 1, empty=False)
@@ -32,6 +33,7 @@ def naive_test():
     network._add_edge(network.nodes[0], network.nodes[8], 1)
     fitness = env.eval_test(network)
     print("Naive Test:", fitness)
+
 
 def run():
     trained_model_test()

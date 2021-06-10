@@ -1,3 +1,3 @@
-from tests import serialize_test
+from tests import serialize_test,naiveTest
 
-serialize_test.run()
+naiveTest.run()
