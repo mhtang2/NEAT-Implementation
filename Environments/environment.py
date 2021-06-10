@@ -37,6 +37,21 @@ class Stock_env(Environment):
     def setRandomStart():
         Stock_env.random_chunk_start = random.randint(
             len(Stock_env.trainingDat) - 40)
+    
+    def theoretical_max_profit():
+        availible_cash = STARTING_CASH
+        shares_held = 0
+        for day in range(Stock_env.random_chunk_start, Stock_env.random_chunk_start + 40):
+            if Stock_env.trainingDat[day + 1][0] > Stock_env.trainingDat[day][0]:
+                shares_held += (availible_cash / Stock_env.trainingDat[day][0])
+                availible_cash = 0
+            elif Stock_env.trainingDat[day + 1][0] < Stock_env.trainingDat[day][0]:
+                available_cash += (shares_held * Stock_env.trainingDat[day][0])
+                shares_held = 0
+        total_money = available_cash + \
+            (shares_held * Stock_env.trainingDat[Stock_env.random_chunk_start + 40][0])
+        return total_money
+
 
     STARTING_CASH = 1000
 

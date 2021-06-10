@@ -6,15 +6,16 @@ import numpy.random as random
 from scipy.special import expit
 
 from Net import edge
-
+import pickle
 
 MAX_CYCLES_ADD_EDGE = 100
 MAX_CYCLES_ADD_NODE = 100
 
 
 def sigmoid(x):
-    #return 1/(1 + np.exp(-x))
+    # return 1/(1 + np.exp(-x))
     return expit(x)
+
 
 def tanh(x):
     return np.tanh(x)
@@ -187,6 +188,11 @@ class Network():
 
         node.val = activation(node.val)  # Activation
         return node.val
+    
+    def resetNodeVals(self):
+        for nodeNum in range (len(self.nodes)):
+            self.nodes[nodeNum].val = 0
+            self.nodes[nodeNum].visited = False
 
     # Run one prediction
     def feedforward(self, inputValues):
@@ -221,3 +227,15 @@ class Network():
             node.visited = False
 
         return output
+
+
+def save_model(model: Network, filename):
+    model.resetNodeVals()
+    with open(filename, 'wb') as output:  # Overwrites any existing file.
+        pickle.dump(model, output, pickle.HIGHEST_PROTOCOL)
+
+
+def load_model(filename) -> Network:
+    with open(filename, 'rb') as input:
+        model = pickle.load(input)
+    return model

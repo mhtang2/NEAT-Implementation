@@ -2,7 +2,6 @@ import requests
 import pandas as pd
 import numpy as np
 import io
-from utils import Data
 from datetime import date, timedelta, datetime, timezone
 import time
 import pytz
@@ -35,7 +34,7 @@ with open("apikeys.key") as APIfp:
     retrieveTDAuthToken()
 
 
-def getSymbolsTD(arr: list, directory="data/TDtest", freqType="minute", periodType="day", freq=1, endDate=None, daysBack=0, save=True,
+def getSymbolsTD(arr: list, directory="data", freqType="minute", periodType="day", freq=1, endDate=None, daysBack=0, save=True,
                  disableDelay=False, datedFileName=False):
     if endDate is None:
         # Calculate end time as now, or previous close if it is past close
@@ -70,15 +69,18 @@ def getSymbolsTD(arr: list, directory="data/TDtest", freqType="minute", periodTy
                              "periodType": periodType,
                              "frequencyType": freqType,
                              "frequency": freq,
-                             "needExtendedHoursData": "true",
-                             "endDate": endDateStamp,
-                             "startDate": startDateStamp,
+                            # In place of end start
+                             "period": 5
+                            #  "needExtendedHoursData": "true",
+                            #  "endDate": endDateStamp,
+                            #  "startDate": startDateStamp,
                          })
         if r.status_code == 200:
             try:
                 obj = json.loads(r.text)
                 df = pd.DataFrame(obj["candles"])
-                df["datetime"] = pd.to_datetime(df['datetime'], unit='ms').dt.tz_localize('UTC').dt.tz_convert('America/New_York')
+                df["datetime"] = pd.to_datetime(df['datetime'], unit='ms').dt.tz_localize(
+                    'UTC').dt.tz_convert('America/New_York')
                 if save:
                     df.to_csv(fileName, index=False)
                 else:
@@ -96,17 +98,8 @@ def getSymbolsTD(arr: list, directory="data/TDtest", freqType="minute", periodTy
     if not save:
         return res
 
-
-def downloadNASDAQListing():
-    """Download full listing with opening prices using NASDAQ API"""
-    link = "https://old.nasdaq.com/screening/companies-by-name.aspx?letter=0&exchange=nasdaq&render=download"
-    headers = {'user-agent': 'Mozilla/5.0'}
-    r = requests.get(link, headers=headers)
-    dat = r.text.replace("$", "")
-    df = pd.read_csv(io.StringIO(dat), usecols=np.arange(7), sep=",", engine="python", quotechar='"', error_bad_lines=False)
-    df.columns = ["symbol", "name", "price", "marketcap", "ipo", "sector", "industry"]
-    df["symbol"] = df["symbol"].apply(lambda x: x.strip())
-    df.to_csv("data/nasdaqListing.csv", index=False)
-    print(df.to_string())
-
-getSymbolsTD(["AAPL"])
+if __name__=='__main__':
+    df = pd.read_csv("fortune500.csv")
+    syms = df['Symbol'].to_numpy()
+    print(len(syms))
+    getSymbolsTD(syms,directory="D:/stock_data",freqType="daily",periodType="year")
