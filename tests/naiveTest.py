@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 def trained_model_test():
     pop = Population(100, 1+5, 1, 1, Stock_env)
     for epoch in range(200):
+        Stock_env.setRandomStart()
         pop.run()
         print(f"Epoch {epoch}")
         print(f"Has {len(pop.population)} # of species")
@@ -31,3 +32,7 @@ def naive_test():
     network._add_edge(network.nodes[0], network.nodes[8], 1)
     fitness = env.eval_test(network)
     print("Naive Test:", fitness)
+
+def run():
+    trained_model_test()
+    # naive_test()

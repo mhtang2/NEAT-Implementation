@@ -26,28 +26,67 @@ class Stock_env(Environment):
         scaler = preprocessing.MinMaxScaler()
         scaler.fit(data)
         data = scaler.transform(data)
-        training = data[:-30]
-        testing = data[-30:]
+        training = data[:-41]
+        testing = data[-41:]
         return training, testing, scaler
 
     trainingDat, testingDat, scaler = loadData()
 
-    # Predict next day close given previous day open, volume, high, low, and close
-    def eval_train(network) -> float:
-        err = 0
-        for i in range(len(Stock_env.trainingDat)-1):
-            xi = Stock_env.trainingDat[i].tolist()
-            y = network.feedforward(xi)[0]
-            err += np.abs(Stock_env.trainingDat[i+1][0]-y)
-        return max(0.01, 260-err)
+    random_chunk_start = -1
 
-    def eval_test(network) -> float:
-        err = 0
-        for i in range(len(Stock_env.testingDat)-1):
-            xi = Stock_env.testingDat[i].tolist()
-            y = network.feedforward(xi)[0]
-            err += np.abs(Stock_env.testingDat[i+1][0]-y)
-        return max(0.01, 30-err)
+    def setRandomStart():
+        Stock_env.random_chunk_start = random.randint(
+            len(Stock_env.trainingDat) - 40)
+
+    STARTING_CASH = 1000
+
+    def eval_train(network):
+        available_cash = Stock_env.STARTING_CASH
+        shares_held = 0
+        # Pick random 40 day block
+        start = Stock_env.random_chunk_start
+        for day in range(start, start + 40):
+            action = network.feedforward(
+                Stock_env.trainingDat[day].tolist())[0]
+            if day == start:
+                continue
+            if action > 0.03:
+                buy = available_cash * action
+                # Divide by closing price
+                shares_held += (buy / Stock_env.trainingDat[day][0])
+                available_cash -= buy
+            elif action < -0.03:
+                shares_sold = shares_held * -action
+                available_cash += (shares_sold * Stock_env.trainingDat[day][0])
+                shares_held = shares_held * (1+action)
+        total_money = available_cash + \
+            (shares_held * Stock_env.trainingDat[start + 40][0])
+        return total_money
+
+    def eval_test(network):
+        total_money = 0
+        for test_case in range(1):
+            available_cash = Stock_env.STARTING_CASH
+            shares_held = 0
+            # Pick random 40 day block
+            start = random.randint(len(Stock_env.testingDat) - 40)
+            for day in range(start, start + 40):
+                action = network.feedforward(
+                    Stock_env.testingDat[day].tolist())[0]
+                if day == start:
+                    continue
+                if action > 0.03:
+                    buy = available_cash * action
+                    # Divide by closing price
+                    shares_held += buy / Stock_env.testingDat[day][0]
+                    available_cash -= buy
+                elif action < -0.03:
+                    shares_sold = shares_held * -action
+                    available_cash += (shares_sold * Stock_env.testingDat[day][0])
+                    shares_held = shares_held * (1+action)
+            total_money += available_cash + \
+                (shares_held * Stock_env.testingDat[start + 40][0])
+        return total_money
 
 
 class XOR_Env(Environment):

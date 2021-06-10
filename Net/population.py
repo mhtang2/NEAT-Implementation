@@ -217,7 +217,7 @@ class Population:
                 if fitness >= PERFECT_FITNESS:
                     numPerfect += 1
                 species.fitnessList[netNum] = fitness / species.size()
-            print(f"Found {numPerfect} perfect members")
+            # print(f"Found {numPerfect} perfect members")
         totalFitness = 0  # Total fitness of population
         for species in self.population:
             totalFitness += species.updateFitnessSum()

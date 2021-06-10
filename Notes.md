@@ -1,11 +1,14 @@
 # TODO
+- More data
+    - Separate testing chunks as random chunks instead of last chunk
+- Calculate theoretical maximum profit
 - Save Networks
-- Error -> fitness converion better
 
 # Fixes to previous bugs
 - tanh vs sigmoid speed/efficacy
 
 # TO think about?
+- When to use different chunks of data?
 - Drop out
 - MAX_CYCLES_ADD_EDGE should be V^2 instead of V
 
