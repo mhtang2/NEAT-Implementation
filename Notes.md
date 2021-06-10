@@ -11,6 +11,7 @@
 - When to use different chunks of data?
 - Drop out
 - MAX_CYCLES_ADD_EDGE should be V^2 instead of V
+- Reseting network loses potentially valuable info 
 
 # Done
 - Fix disabled/enabled edges in crossing over
