@@ -17,8 +17,7 @@ def sigmoid(x):
     return expit(x)
 
 
-def tanh(x):
-    return np.tanh(x)
+tanh = np.tanh
 
 
 def relu(x):
@@ -188,9 +187,9 @@ class Network():
 
         node.val = activation(node.val)  # Activation
         return node.val
-    
+
     def resetNodeVals(self):
-        for nodeNum in range (len(self.nodes)):
+        for nodeNum in range(len(self.nodes)):
             self.nodes[nodeNum].val = 0
             self.nodes[nodeNum].visited = False
 

@@ -10,8 +10,9 @@ import matplotlib.pyplot as plt
 
 
 def trained_model_test():
-    pop = Population(100, 1+5, 1, 1, stock_environment.Stock_env)
-    for epoch in range(200):
+    Network.setParams(5+1, 1, 20)
+    pop = Population(100, 5+1, 1, 20, stock_environment.Stock_env)
+    for epoch in range(2000):
         stock_environment.Stock_env.setRandomStart()
         pop.run()
         print(f"Epoch {epoch}")

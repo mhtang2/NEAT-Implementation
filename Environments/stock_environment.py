@@ -12,6 +12,9 @@ CHUNK = 40
 
 def loadStockData(filename):
     df = pd.read_csv(filename)[['open', 'high', 'low', 'close', 'volume']]
+    if len(df) < CHUNK:
+        print(f"{filename} has too little data")
+        return None
     df = df.iloc[::-1]
     df['close_unscaled'] = df['close']
     scaler = preprocessing.MinMaxScaler()
@@ -27,11 +30,12 @@ def loadAllData():
                             size=len(dataFiles)//10, replace=False)
     for i, fileName in enumerate(os.listdir("D:/stock_data")):
         stockData = loadStockData("D:/stock_data/" + fileName)
+        if stockData is None:
+            continue
         if i in testNum:
             testingDat.append(stockData)
         else:
             trainingDat.append(stockData)
-        break
     print("DATA LOADED")
     return trainingDat, testingDat
 
