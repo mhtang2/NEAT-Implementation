@@ -15,6 +15,8 @@ def trained_model_test():
     for epoch in range(2000):
         stock_environment.Stock_env.setRandomStart()
         pop.run()
+        print(f"Momentum Fitness  {stock_environment.Stock_env.momentum_bot()}")
+        print(f"Perfect Fitness  {stock_environment.Stock_env.perfect_bot()}")
         print(f"Epoch {epoch}")
         print(f"Has {len(pop.population)} # of species")
         print(f"Has {pop.getCurrentPop()} # of members")
@@ -26,16 +28,5 @@ def trained_model_test():
     pop.test()
 
 
-def naive_test():
-    Network.setParams(5+1, 1, 1)
-    network = Network(5+1, 1, 1, empty=False)
-    env = Stock_env
-    network._add_edge(network.nodes[6], network.nodes[7], 1)
-    network._add_edge(network.nodes[0], network.nodes[8], 1)
-    fitness = env.eval_test(network)
-    print("Naive Test:", fitness)
-
-
 def run():
     trained_model_test()
-    # naive_test()

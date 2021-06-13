@@ -54,15 +54,32 @@ class Stock_env(Environment):
         Stock_env.random_chunk_start = random.randint(
             len(Stock_env.trainingDat[Stock_env.random_stock]) - CHUNK)
 
-    def theoretical_max_profit():
+    def perfect_bot():
         available_cash = STARTING_CASH
         shares_held = 0
-        for day in range(Stock_env.random_chunk_start, Stock_env.random_chunk_start + CHUNK):
+        for day in range(Stock_env.random_chunk_start, Stock_env.random_chunk_start + CHUNK-1):
             if Stock_env.trainingDat[Stock_env.random_stock][day + 1][5] > Stock_env.trainingDat[Stock_env.random_stock][day][5]:
-                shares_held += (availible_cash /
+                shares_held += (available_cash /
                                 Stock_env.trainingDat[Stock_env.random_stock][day][5])
-                availible_cash = 0
+                available_cash = 0
             elif Stock_env.trainingDat[Stock_env.random_stock][day + 1][5] < Stock_env.trainingDat[Stock_env.random_stock][day][5]:
+                available_cash += (shares_held *
+                                   Stock_env.trainingDat[Stock_env.random_stock][day][5])
+                shares_held = 0
+        total_money = available_cash +\
+            (shares_held *
+             Stock_env.trainingDat[Stock_env.random_stock][Stock_env.random_chunk_start + CHUNK][5])
+        return total_money
+
+    def momentum_bot():
+        available_cash = STARTING_CASH
+        shares_held = 0
+        for day in range(Stock_env.random_chunk_start + 1, Stock_env.random_chunk_start + CHUNK):
+            if Stock_env.trainingDat[Stock_env.random_stock][day][5] > Stock_env.trainingDat[Stock_env.random_stock][day-1][5]:
+                shares_held += (available_cash /
+                                Stock_env.trainingDat[Stock_env.random_stock][day][5])
+                available_cash = 0
+            elif Stock_env.trainingDat[Stock_env.random_stock][day][5] < Stock_env.trainingDat[Stock_env.random_stock][day-1][5]:
                 available_cash += (shares_held *
                                    Stock_env.trainingDat[Stock_env.random_stock][day][5])
                 shares_held = 0
