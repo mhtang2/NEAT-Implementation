@@ -13,22 +13,25 @@ CHUNK = 40
 def loadStockData(filename):
     df = pd.read_csv(filename)[['open', 'high', 'low', 'close', 'volume']]
     df = df.iloc[::-1]
-    data = df.values
+    df['close_unscaled'] = df['close']
     scaler = preprocessing.MinMaxScaler()
-    scaler.fit(data)
-    data = scaler.transform(data)
-    training = data[:-(CHUNK+1)]
-    testing = data[-(CHUNK+1):]
-    return training, testing, scaler
+    df[['open', 'high', 'low', 'close', 'volume']] = scaler.fit_transform(
+        df[['open', 'high', 'low', 'close', 'volume']])
+    return df.values
 
 
 def loadAllData():
-    trainingDat, testingDat, scaler = [], [], []
-    for fileName in os.listdir("D:/stock_data"):
+    trainingDat, testingDat = [], []
+    dataFiles = os.listdir("D:/stock_data")
+    testNum = random.choice(range(len(dataFiles)),
+                            size=len(dataFiles)//10, replace=False)
+    for i, fileName in enumerate(os.listdir("D:/stock_data")):
         stockData = loadStockData("D:/stock_data/" + fileName)
-        trainingDat.append(stockData[0])
-        testingDat.append(stockData[1])
-        scaler.append(stockData[2])
+        if i in testNum:
+            testingDat.append(stockData)
+        else:
+            trainingDat.append(stockData)
+        break
     print("DATA LOADED")
     return trainingDat, testingDat
 
@@ -51,17 +54,17 @@ class Stock_env(Environment):
         available_cash = STARTING_CASH
         shares_held = 0
         for day in range(Stock_env.random_chunk_start, Stock_env.random_chunk_start + CHUNK):
-            if Stock_env.trainingDat[Stock_env.random_stock][day + 1][3] > Stock_env.trainingDat[Stock_env.random_stock][day][3]:
+            if Stock_env.trainingDat[Stock_env.random_stock][day + 1][5] > Stock_env.trainingDat[Stock_env.random_stock][day][5]:
                 shares_held += (availible_cash /
-                                Stock_env.trainingDat[Stock_env.random_stock][day][3])
+                                Stock_env.trainingDat[Stock_env.random_stock][day][5])
                 availible_cash = 0
-            elif Stock_env.trainingDat[Stock_env.random_stock][day + 1][3] < Stock_env.trainingDat[Stock_env.random_stock][day][3]:
+            elif Stock_env.trainingDat[Stock_env.random_stock][day + 1][5] < Stock_env.trainingDat[Stock_env.random_stock][day][5]:
                 available_cash += (shares_held *
-                                   Stock_env.trainingDat[Stock_env.random_stock][day][3])
+                                   Stock_env.trainingDat[Stock_env.random_stock][day][5])
                 shares_held = 0
-        total_money = available_cash + \
+        total_money = available_cash +\
             (shares_held *
-             Stock_env.trainingDat[Stock_env.random_stock][Stock_env.random_chunk_start + CHUNK][3])
+             Stock_env.trainingDat[Stock_env.random_stock][Stock_env.random_chunk_start + CHUNK][5])
         return total_money
 
     STARTING_CASH = 1000
@@ -73,23 +76,23 @@ class Stock_env(Environment):
         start = Stock_env.random_chunk_start
         for day in range(start, start + CHUNK):
             action = network.feedforward(
-                Stock_env.trainingDat[Stock_env.random_stock][day].tolist())[0]
+                Stock_env.trainingDat[Stock_env.random_stock][day][:5].tolist())[0]
             if day == start:
                 continue
             if action > 0.03:
                 buy = available_cash * action
                 # Divide by closing price
                 shares_held += (buy /
-                                Stock_env.trainingDat[Stock_env.random_stock][day][3])
+                                Stock_env.trainingDat[Stock_env.random_stock][day][5])
                 available_cash -= buy
             elif action < -0.03:
                 shares_sold = shares_held * -action
                 available_cash += (shares_sold *
-                                   Stock_env.trainingDat[Stock_env.random_stock][day][3])
+                                   Stock_env.trainingDat[Stock_env.random_stock][day][5])
                 shares_held = shares_held * (1+action)
         total_money = available_cash + \
             (shares_held *
-             Stock_env.trainingDat[Stock_env.random_stock][start + CHUNK][3])
+             Stock_env.trainingDat[Stock_env.random_stock][start + CHUNK][5])
         return total_money
 
     def eval_test(network):
@@ -103,21 +106,21 @@ class Stock_env(Environment):
                 len(Stock_env.testingDat[random_stock]) - CHUNK)
             for day in range(start, start + CHUNK):
                 action = network.feedforward(
-                    Stock_env.testingDat[random_stock][day].tolist())[0]
+                    Stock_env.testingDat[random_stock][day][:5].tolist())[0]
                 if day == start:
                     continue
                 if action > 0.03:
                     buy = available_cash * action
                     # Divide by closing price
                     shares_held += buy / \
-                        Stock_env.testingDat[random_stock][day][3]
+                        Stock_env.testingDat[random_stock][day][5]
                     available_cash -= buy
                 elif action < -0.03:
                     shares_sold = shares_held * -action
                     available_cash += (shares_sold *
-                                       Stock_env.testingDat[random_stock][day][3])
+                                       Stock_env.testingDat[random_stock][day][5])
                     shares_held = shares_held * (1+action)
             total_money += available_cash + \
                 (shares_held *
-                 Stock_env.testingDat[random_stock][start + CHUNK][3])
+                 Stock_env.testingDat[random_stock][start + CHUNK][5])
         return total_money
