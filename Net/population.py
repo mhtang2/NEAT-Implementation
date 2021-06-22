@@ -5,6 +5,7 @@ from .network import Network, tanh
 import numpy as np
 import numpy.random as random
 import math
+from Net.network import save_model
 
 EDGE_MUTATION_RATE = 0.05
 ADD_EDGE_MUTATION_RATE = 0.05
@@ -14,8 +15,8 @@ MUTATION_STRENGTH = 1
 ADD_NODE_MUTATION_NUMBER = 5
 ADD_EDGE_MUTATION_NUMBER = 5
 
-NODE_ABLENESS_MUTATION_RATE = 0  # 0.01
-EDGE_ABLENESS_MUTATION_RATE = 0  # 0.05
+NODE_ABLENESS_MUTATION_RATE = 0.01
+EDGE_ABLENESS_MUTATION_RATE = 0.05
 
 MAX_SPECIES_DIFF = 0.8
 DIST_C1 = 1
@@ -113,6 +114,7 @@ class Population:
         self.population = [Species([Network(numInputs, numOutputs, numRNN)
                                     for _ in range(initialPopulation)])]
         self.environment = environment
+        self.baseline = 0
         print(self.population)
 
     def getCurrentPop(self):
@@ -173,10 +175,12 @@ class Population:
         self.population.append(Species([net]))
         return 1
 
+    def setBaseline(self, x):
+        self.baseline = x
+
     def eliminateWorstPerforming(self, species: Species, numEliminate):
         numEliminate = math.floor(min(species.size()-2, numEliminate))
         if numEliminate <= 0:
-            # TODO:  FIGURE OUT WHY NUMELIMINATE IS NEGATIVE
             return
         idxToAdd = np.argpartition(np.array(species.fitnessList), numEliminate)
         idxToAdd = idxToAdd[numEliminate:]
@@ -185,7 +189,7 @@ class Population:
         # Calculate elite fitness: Can delete
         newFitnessList = [species.fitnessList[idx] for idx in idxToAdd]
         pctOfPop = len(newFitnessList)/(numEliminate+len(newFitnessList))
-        print("Elite Fitness ", sum(newFitnessList)/pctOfPop)
+        # print("Elite Fitness ", sum(newFitnessList)/pctOfPop - self.baseline) 
 
         newList = [species.nets[idx] for idx in idxToAdd]
         species.nets = newList
@@ -207,7 +211,27 @@ class Population:
         networkList = [networkList[idx] for idx in idxToAdd]
 
         for net in networkList:
-            print("Elite Network Test: ", self.environment.eval_test(net))
+            print("Elite Network Test: ", self.environment.eval_test(net) - self.baseline)
+
+    def validate(self, topN = 5):
+        networkList = []
+        fitnessList = []
+        for species in self.population:
+            for net in species.nets:
+                fitnessList.append(self.environment.eval_train(net))
+                networkList.append(net)
+        idxToAdd = np.argpartition(
+            np.array(fitnessList), len(networkList)-topN)
+        idxToAdd = idxToAdd[len(networkList)-topN:]
+
+        fitnessList = [fitnessList[idx] for idx in idxToAdd]
+        print(fitnessList)
+        networkList = [networkList[idx] for idx in idxToAdd]
+
+        for i, net in enumerate(networkList):
+            print("Elite Network Validate: ", self.environment.eval_test(net, True))
+            save_model(net, f"models/elitePop/model{i}.pkl")
+
 
     def run(self):
         for species in self.population:

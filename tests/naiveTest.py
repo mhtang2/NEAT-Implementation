@@ -12,11 +12,15 @@ import matplotlib.pyplot as plt
 def trained_model_test():
     Network.setParams(5+1, 1, 20)
     pop = Population(100, 5+1, 1, 20, stock_environment.Stock_env)
-    for epoch in range(2000):
+    for epoch in range(500):
         stock_environment.Stock_env.setRandomStart()
+        baseline = stock_environment.Stock_env.momentum_bot(
+            stock_environment.Stock_env.trainingDat[stock_environment.Stock_env.random_stock], stock_environment.Stock_env.random_chunk_start, stock_environment.CHUNK)
+        pop.setBaseline(baseline)
         pop.run()
-        print(f"Momentum Fitness  {stock_environment.Stock_env.momentum_bot()}")
+        print(f"Momentum Fitness  {baseline}")
         print(f"Perfect Fitness  {stock_environment.Stock_env.perfect_bot()}")
+        print(f"Chunk size {stock_environment.CHUNK}")
         print(f"Epoch {epoch}")
         print(f"Has {len(pop.population)} # of species")
         print(f"Has {pop.getCurrentPop()} # of members")
@@ -25,7 +29,7 @@ def trained_model_test():
         print(
             f"Average nodes per network: {np.mean([len([node for node in net.nodes if node.enabled])for species in pop.population for net in species.nets ])}")
         # printNetwork(pop.population[0].nets[0])
-    pop.test()
+    pop.validate()
 
 
 def run():
